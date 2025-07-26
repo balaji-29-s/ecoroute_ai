@@ -1,0 +1,39 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: ecoroute_postgres
+    environment:
+      POSTGRES_DB: ecoroute_db
+      POSTGRES_USER: ecoroute_user
+      POSTGRES_PASSWORD: ecoroute_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ecoroute_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # pgAdmin (Database Management UI)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: ecoroute_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@ecoroute.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
