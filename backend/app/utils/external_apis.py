@@ -1,113 +1,80 @@
+import os
+import httpx
 import logging
-from typing import Dict, Tuple
-from math import radians, cos, sin, asin, sqrt
+from dotenv import load_dotenv
 
+# Load .env from the app directory specifically
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 logger = logging.getLogger(__name__)
 
-class ExternalAPIClient:
-    """Client for external APIs (routing, weather, etc.)"""
-    
-    def __init__(self):
-        self.timeout = 30.0
-        
-    async def get_route_data(
-        self, 
-        origin: Tuple[float, float], 
-        destination: Tuple[float, float],
-        transport_mode: str = "driving"
-    ) -> Dict:
-        """Get route data - using mock data for now"""
-        
-        try:
-            distance_km = self._calculate_distance(origin, destination)
-            duration_seconds = self._calculate_duration(origin, destination, transport_mode)
-            
-            # Create mock response similar to OpenRouteService format
-            mock_response = {
-                "features": [{
-                    "properties": {
-                        "summary": {
-                            "distance": distance_km * 1000,  # Convert to meters
-                            "duration": duration_seconds
-                        }
-                    },
-                    "geometry": {
-                        "coordinates": [
-                            [origin[1], origin[0]],  # [lng, lat]
-                            [(origin[1] + destination[1])/2, (origin[0] + destination[0])/2],
-                            [destination[1], destination[0]]
-                        ]
-                    }
-                }]
-            }
-            
-            logger.info(f"Route calculated: {distance_km:.2f}km, {duration_seconds/3600:.2f}h")
-            return mock_response
-            
-        except Exception as e:
-            logger.error(f"Error getting route data: {e}")
-            return self._get_fallback_route(origin, destination)
-    
-    async def get_weather_data(self, lat: float, lng: float) -> Dict:
-        """Get weather data for a location - mock data for now"""
-        
-        try:
-            # Mock weather data (in production, use OpenWeatherMap API)
-            mock_weather = {
-                "temperature": 22.5,
-                "humidity": 68,
-                "wind_speed": 15.2,
-                "wind_direction": 180,
-                "weather_main": "Clear",
-                "visibility": 10000,
-                "pressure": 1013.25
-            }
-            
-            logger.info(f"Weather data retrieved for ({lat:.2f}, {lng:.2f})")
-            return mock_weather
-            
-        except Exception as e:
-            logger.error(f"Error getting weather data: {e}")
-            return {"error": str(e)}
-    
-    def _calculate_distance(self, origin: Tuple[float, float], dest: Tuple[float, float]) -> float:
-        """Calculate distance using Haversine formula"""
-        lat1, lng1 = radians(origin[0]), radians(origin[1])
-        lat2, lng2 = radians(dest[0]), radians(dest[1])
-        
-        dlat = lat2 - lat1
-        dlng = lng2 - lng1
-        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlng/2)**2
-        distance_km = 2 * asin(sqrt(a)) * 6371  # Earth's radius
-        
-        return distance_km
-    
-    def _calculate_duration(self, origin: Tuple[float, float], dest: Tuple[float, float], mode: str) -> float:
-        """Calculate estimated duration"""
-        distance = self._calculate_distance(origin, dest)
-        
-        # Average speeds by transport mode (km/h)
-        speeds = {"truck": 70, "car": 80, "ship": 25, "train": 60}
-        speed = speeds.get(mode, 70)
-        duration_hours = distance / speed
-        
-        return duration_hours * 3600  # Return in seconds
-    
-    def _get_fallback_route(self, origin: Tuple[float, float], dest: Tuple[float, float]) -> Dict:
-        """Fallback route data when API fails"""
-        return {
-            "features": [{
-                "properties": {
-                    "summary": {
-                        "distance": self._calculate_distance(origin, dest) * 1000,
-                        "duration": self._calculate_duration(origin, dest, "truck")
-                    }
-                },
-                "geometry": {
-                    "coordinates": [[origin[1], origin[0]], [dest[1], dest[0]]]
-                }
-            }]
-        }
+ORS_API_KEY = os.getenv("ORS_API_KEY")
+OWM_API_KEY = os.getenv("OWM_API_KEY")
 
-# Global client instance
-api_client = ExternalAPIClient()
+# Add debug logging to check if keys are loaded
+logger.info(f"ORS_API_KEY loaded: {'Yes' if ORS_API_KEY else 'No'}")
+logger.info(f"OWM_API_KEY loaded: {'Yes' if OWM_API_KEY else 'No'}")
+
+def get_profile(mode):
+    return {
+        "car": "driving-car",
+        "bike": "cycling-regular",
+        "truck": "driving-hgv"
+    }.get(mode, "driving-car")
+
+async def fetch_routes(origin, destination, mode):
+    if not ORS_API_KEY:
+        logger.error("ORS_API_KEY not set in environment variables")
+        raise Exception("ORS_API_KEY not set in environment variables.")
+    
+    profile = get_profile(mode)
+    url = f"https://api.openrouteservice.org/v2/directions/{profile}/geojson"
+    headers = {"Authorization": ORS_API_KEY}
+    body = {
+        "coordinates": [
+            [origin[1], origin[0]],
+            [destination[1], destination[0]]
+        ],
+        "instructions": True,
+        "alternative_routes": {
+            "share_factor": 0.6,
+            "target_count": 3
+        }
+    }
+    
+    logger.info(f"Fetching routes from ORS: {url}")
+    logger.info(f"Request body: {body}")
+    
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(url, headers=headers, json=body)
+            resp.raise_for_status()
+            data = resp.json()
+            logger.info(f"ORS response received with {len(data.get('features', []))} routes")
+            return data["features"]
+    except httpx.HTTPStatusError as e:
+        logger.error(f"ORS API error: {e.response.status_code} - {e.response.text}")
+        raise Exception(f"ORS API error: {e.response.status_code} - {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error fetching routes: {e}")
+        raise Exception(f"Error fetching routes: {e}")
+
+async def fetch_weather(lat, lng):
+    if not OWM_API_KEY:
+        logger.warning("OWM_API_KEY not set, returning mock weather data")
+        return {"temperature": 22.5, "description": "No API key"}
+    
+    url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lng}&appid={OWM_API_KEY}&units=metric"
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            data = resp.json()
+            logger.info(f"Weather data received for ({lat}, {lng})")
+            return {
+                "temperature": data["main"]["temp"],
+                "description": data["weather"][0]["description"]
+            }
+    except Exception as e:
+        logger.warning(f"Weather API error: {e}, returning mock data")
+        return {"temperature": 22.5, "description": "Unavailable"}
