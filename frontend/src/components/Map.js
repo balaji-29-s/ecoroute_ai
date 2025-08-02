@@ -26,7 +26,7 @@ export default function MapComponent() {
     }
   }, []);
 
-  useEffect(() => {
+  const calculateRoute = () => {
     setLoading(true);
     console.log("Fetching routes for:", { origin, destination, mode, vehicleType, trafficCondition, cargoWeight });
     
@@ -72,7 +72,7 @@ export default function MapComponent() {
         setLoading(false);
         alert("Network error: " + error.message);
       });
-  }, [origin, destination, mode, vehicleType, trafficCondition, cargoWeight]);
+  };
 
   const getVehicleOptions = () => {
     switch (mode) {
@@ -148,6 +148,22 @@ export default function MapComponent() {
               />
             </label>
           )}
+          <button 
+            onClick={calculateRoute}
+            disabled={loading}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: loading ? '#ccc' : '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            {loading ? 'Calculating...' : 'Calculate Route'}
+          </button>
           {loading && <span style={{ color: 'blue' }}>Loading routes...</span>}
         </div>
         <div id="map" style={{ height: '90vh', width: '100%' }} />
