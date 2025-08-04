@@ -1,9 +1,20 @@
 import L from 'leaflet';
 import React, { useEffect, useRef, useState } from 'react';
 import { fetchRoutes } from '../api';
+import LoadingSpinner from './LoadingSpinner';
 import Sidebar from './Sidebar';
 
-const ROUTE_COLORS = { eco: 'green', fastest: 'blue', alternate: 'gray' };
+const ROUTE_COLORS = { 
+  eco: '#10b981', 
+  fastest: '#3b82f6', 
+  alternate: '#6b7280' 
+};
+
+const ROUTE_NAMES = {
+  eco: 'Eco-Friendly',
+  fastest: 'Fastest',
+  alternate: 'Alternative'
+};
 
 export default function MapComponent() {
   const mapRef = useRef();
@@ -16,6 +27,7 @@ export default function MapComponent() {
   const [routes, setRoutes] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!mapRef.current) {
@@ -23,11 +35,28 @@ export default function MapComponent() {
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(mapRef.current);
+      
+      // Force a resize after initialization to ensure proper display
+      setTimeout(() => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize();
+        }
+      }, 100);
     }
   }, []);
 
+  // Handle map resizing when routes are updated
+  useEffect(() => {
+    if (mapRef.current && routes.length > 0) {
+      setTimeout(() => {
+        mapRef.current.invalidateSize();
+      }, 50);
+    }
+  }, [routes]);
+
   const calculateRoute = () => {
     setLoading(true);
+    setError(null);
     console.log("Fetching routes for:", { origin, destination, mode, vehicleType, trafficCondition, cargoWeight });
     
     fetchRoutes(origin, destination, mode, vehicleType, trafficCondition, cargoWeight)
@@ -37,7 +66,7 @@ export default function MapComponent() {
         
         if (!data.success) {
           console.error("API failed:", data);
-          alert("Failed to fetch routes from backend: " + (data.detail || "Unknown error"));
+          setError("Failed to fetch routes from backend: " + (data.detail || "Unknown error"));
           return;
         }
         
@@ -54,9 +83,9 @@ export default function MapComponent() {
         data.routes.forEach(route => {
           const latlngs = route.geometry.map(([lng, lat]) => [lat, lng]);
           const polyline = L.polyline(latlngs, {
-            color: ROUTE_COLORS[route.type] || 'black',
-            weight: 5,
-            opacity: 0.7
+            color: ROUTE_COLORS[route.type] || '#000',
+            weight: 6,
+            opacity: 0.8
           }).addTo(map);
           polyline.on('click', () => setSelected(route));
         });
@@ -70,7 +99,7 @@ export default function MapComponent() {
       .catch(error => {
         console.error("Fetch error:", error);
         setLoading(false);
-        alert("Network error: " + error.message);
+        setError("Network error: " + error.message);
       });
   };
 
@@ -108,68 +137,217 @@ export default function MapComponent() {
     }
   };
 
+  const handleCoordinateChange = (type, value) => {
+    const coords = value.split(',').map(Number);
+    if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+      if (type === 'origin') {
+        setOrigin(coords);
+      } else {
+        setDestination(coords);
+      }
+    }
+  };
+
   return (
-    <div style={{ display: 'flex' }}>
-      <div style={{ width: '70vw', height: '100vh' }}>
-        <div style={{ padding: 10, display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-          <label>Origin: <input value={origin.join(',')} onChange={e => setOrigin(e.target.value.split(',').map(Number))} /></label>
-          <label>Destination: <input value={destination.join(',')} onChange={e => setDestination(e.target.value.split(',').map(Number))} /></label>
-          <label>Mode:
-            <select value={mode} onChange={e => setMode(e.target.value)}>
-              <option value="car">Car</option>
-              <option value="bike">Bike</option>
-              <option value="truck">Truck</option>
-              <option value="motorcycle">Motorcycle</option>
-            </select>
-          </label>
-          <label>Vehicle Type:
-            <select value={vehicleType} onChange={e => setVehicleType(e.target.value)}>
-              {getVehicleOptions().map(option => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </label>
-          <label>Traffic:
-            <select value={trafficCondition} onChange={e => setTrafficCondition(e.target.value)}>
-              <option value="normal">Normal</option>
-              <option value="highway">Highway</option>
-              <option value="urban">Urban</option>
-              <option value="rural">Rural</option>
-              <option value="congested">Congested</option>
-            </select>
-          </label>
-          {mode === 'truck' && (
-            <label>Cargo Weight (kg):
-              <input 
-                type="number" 
-                value={cargoWeight} 
-                onChange={e => setCargoWeight(parseInt(e.target.value) || 0)}
-                style={{ width: '80px' }}
-              />
-            </label>
-          )}
-          <button 
-            onClick={calculateRoute}
-            disabled={loading}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: loading ? '#ccc' : '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            {loading ? 'Calculating...' : 'Calculate Route'}
-          </button>
-          {loading && <span style={{ color: 'blue' }}>Loading routes...</span>}
+    <div className="d-flex h-full">
+      {/* Main Map Area */}
+      <div className="flex-1 d-flex flex-column">
+        {/* Header */}
+        <div className="card mb-0 rounded-0">
+          <div className="card-header">
+            <div className="d-flex align-center justify-between">
+              <h2 className="mb-0">
+                <span style={{ color: 'var(--primary-color)' }}>Eco</span>Route AI
+              </h2>
+              <div className="badge badge-success">
+                <span className="spinner mr-2"></span>
+                Live Traffic
+              </div>
+            </div>
+          </div>
         </div>
-        <div id="map" style={{ height: '90vh', width: '100%' }} />
+
+        {/* Controls Panel */}
+        <div className="card mb-3 mx-3 mt-3">
+          <div className="card-body">
+            <div className="d-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-md)' }}>
+              
+              {/* Origin Input */}
+              <div className="form-group">
+                <label className="form-label">
+                  <span style={{ color: 'var(--success-color)' }}>📍</span> Origin Coordinates
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={origin.join(',')}
+                  onChange={(e) => handleCoordinateChange('origin', e.target.value)}
+                  placeholder="lat, lng (e.g., 51.5, -0.1)"
+                />
+              </div>
+
+              {/* Destination Input */}
+              <div className="form-group">
+                <label className="form-label">
+                  <span style={{ color: 'var(--danger-color)' }}>🎯</span> Destination Coordinates
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={destination.join(',')}
+                  onChange={(e) => handleCoordinateChange('destination', e.target.value)}
+                  placeholder="lat, lng (e.g., 51.52, -0.12)"
+                />
+              </div>
+
+              {/* Transport Mode */}
+              <div className="form-group">
+                <label className="form-label">
+                  <span style={{ color: 'var(--primary-color)' }}>🚗</span> Transport Mode
+                </label>
+                <select 
+                  className="form-select" 
+                  value={mode} 
+                  onChange={(e) => setMode(e.target.value)}
+                >
+                  <option value="car">Car</option>
+                  <option value="bike">Bike</option>
+                  <option value="truck">Truck</option>
+                  <option value="motorcycle">Motorcycle</option>
+                </select>
+              </div>
+
+              {/* Vehicle Type */}
+              <div className="form-group">
+                <label className="form-label">
+                  <span style={{ color: 'var(--accent-color)' }}>⚙️</span> Vehicle Type
+                </label>
+                <select 
+                  className="form-select" 
+                  value={vehicleType} 
+                  onChange={(e) => setVehicleType(e.target.value)}
+                >
+                  {getVehicleOptions().map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Traffic Condition */}
+              <div className="form-group">
+                <label className="form-label">
+                  <span style={{ color: 'var(--warning-color)' }}>🚦</span> Traffic Condition
+                </label>
+                <select 
+                  className="form-select" 
+                  value={trafficCondition} 
+                  onChange={(e) => setTrafficCondition(e.target.value)}
+                >
+                  <option value="normal">Normal</option>
+                  <option value="highway">Highway</option>
+                  <option value="urban">Urban</option>
+                  <option value="rural">Rural</option>
+                  <option value="congested">Congested</option>
+                </select>
+              </div>
+
+              {/* Cargo Weight (for trucks) */}
+              {mode === 'truck' && (
+                <div className="form-group">
+                  <label className="form-label">
+                    <span style={{ color: 'var(--secondary-color)' }}>📦</span> Cargo Weight (kg)
+                  </label>
+                  <input 
+                    type="number" 
+                    className="form-input"
+                    value={cargoWeight} 
+                    onChange={(e) => setCargoWeight(parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                    min="0"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="d-flex align-center justify-between mt-4">
+              <div className="d-flex gap-2">
+                <button 
+                  className="btn btn-primary"
+                  onClick={calculateRoute}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <LoadingSpinner size="sm" text="" />
+                      Calculating Routes...
+                    </>
+                  ) : (
+                    <>
+                      <span>🚀</span>
+                      Calculate Route
+                    </>
+                  )}
+                </button>
+                
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setRoutes([]);
+                    setSelected(null);
+                    setError(null);
+                    const map = mapRef.current;
+                    map.eachLayer(layer => {
+                      if (layer instanceof L.Polyline && !layer._url) map.removeLayer(layer);
+                    });
+                  }}
+                >
+                  <span>🗑️</span>
+                  Clear Routes
+                </button>
+              </div>
+
+              {/* Status Indicators */}
+              <div className="d-flex align-center gap-2">
+                {loading && (
+                  <div className="badge badge-info">
+                    <LoadingSpinner size="sm" text="" />
+                    Processing...
+                  </div>
+                )}
+                {error && (
+                  <div className="badge badge-danger">
+                    <span>⚠️</span>
+                    Error
+                  </div>
+                )}
+                {routes.length > 0 && (
+                  <div className="badge badge-success">
+                    <span>✅</span>
+                    {routes.length} Routes Found
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mt-3 p-3 rounded" style={{ backgroundColor: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca' }}>
+                <strong>Error:</strong> {error}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Map Container */}
+        <div className="flex-1 map-container mx-3 mb-3">
+          <div id="map" className="h-full" />
+        </div>
       </div>
-      <div style={{ width: '30vw', background: '#f8f8f8' }}>
-        <Sidebar route={selected} />
+
+      {/* Sidebar */}
+      <div className="w-96 d-flex flex-column">
+        <Sidebar route={selected} routes={routes} onRouteSelect={setSelected} />
       </div>
     </div>
   );

@@ -1,70 +1,124 @@
-# Getting Started with Create React App
+# EcoRoute AI Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern, responsive web application for eco-friendly route planning with real-time traffic and environmental impact analysis.
 
-## Available Scripts
+## 🚀 Features
 
-In the project directory, you can run:
+### Modern UI/UX
+- **Clean, Professional Design**: Modern card-based layout with consistent spacing and typography
+- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
+- **Interactive Elements**: Hover effects, smooth transitions, and loading states
+- **Accessibility**: Proper focus states, keyboard navigation, and screen reader support
 
-### `npm start`
+### Enhanced Route Planning
+- **Multiple Transport Modes**: Car, bike, truck, and motorcycle options
+- **Vehicle Type Selection**: Specific vehicle types for accurate emissions calculation
+- **Traffic Conditions**: Normal, highway, urban, rural, and congested traffic options
+- **Cargo Weight**: For truck routes, specify cargo weight for precise calculations
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Route Visualization
+- **Interactive Map**: Click on routes to see detailed information
+- **Route Comparison**: Side-by-side comparison of eco-friendly, fastest, and alternative routes
+- **Environmental Impact**: Real-time CO₂ emissions calculation and eco-scoring
+- **Turn-by-turn Directions**: Detailed navigation instructions
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Environmental Analysis
+- **Eco Scoring**: A+ to E rating system for environmental impact
+- **Emissions Tracking**: CO₂ emissions per kilometer and total trip
+- **Impact Factors**: Traffic, weather, and cargo impact analysis
+- **Fuel Consumption**: Estimated fuel usage for combustion vehicles
 
-### `npm test`
+## 🎨 Design System
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Colors
+- **Primary**: Blue (#3b82f6) for main actions and branding
+- **Success**: Green (#10b981) for eco-friendly elements
+- **Warning**: Orange (#f59e0b) for cautionary information
+- **Danger**: Red (#ef4444) for errors and high emissions
+- **Neutral**: Gray scale for text and backgrounds
 
-### `npm run build`
+### Typography
+- **Font**: Inter (Google Fonts) for modern, readable typography
+- **Weights**: 300, 400, 500, 600, 700 for proper hierarchy
+- **Sizes**: Responsive text sizing for different screen sizes
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Components
+- **Cards**: Consistent card design with headers, bodies, and footers
+- **Buttons**: Primary, secondary, and success button variants
+- **Forms**: Styled inputs and selects with proper focus states
+- **Badges**: Status indicators with appropriate colors
+- **Loading States**: Spinner components for better UX
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🛠️ Technical Stack
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- **React**: Modern React with hooks and functional components
+- **Leaflet**: Interactive mapping library
+- **CSS**: Custom CSS with CSS variables for consistent theming
+- **Error Handling**: Error boundaries for graceful error handling
+- **Responsive Design**: Mobile-first approach with CSS Grid and Flexbox
 
-### `npm run eject`
+## 📱 Responsive Features
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- **Desktop**: Full-featured interface with sidebar and detailed controls
+- **Tablet**: Optimized layout with collapsible sections
+- **Mobile**: Touch-friendly interface with simplified controls
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## ♿ Accessibility
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- **Keyboard Navigation**: Full keyboard support for all interactive elements
+- **Screen Reader Support**: Proper ARIA labels and semantic HTML
+- **Focus Management**: Clear focus indicators and logical tab order
+- **Color Contrast**: WCAG AA compliant color combinations
+- **Error Handling**: Clear error messages and recovery options
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 🎯 User Experience
 
-## Learn More
+### Loading States
+- Spinner animations during route calculation
+- Progress indicators for long operations
+- Disabled states for buttons during processing
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Error Handling
+- Graceful error boundaries for unexpected issues
+- Clear error messages with recovery options
+- Network error handling with retry mechanisms
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Visual Feedback
+- Hover effects on interactive elements
+- Smooth transitions between states
+- Color-coded route types and eco scores
+- Progress bars for emissions visualization
 
-### Code Splitting
+## 🔧 Getting Started
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-### Analyzing the Bundle Size
+2. Start the development server:
+   ```bash
+   npm start
+   ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+3. Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-### Making a Progressive Web App
+## 📦 Build
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+To create a production build:
 
-### Advanced Configuration
+```bash
+npm run build
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 🧪 Testing
 
-### Deployment
+Run the test suite:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```bash
+npm test
+```
 
-### `npm run build` fails to minify
+## 📄 License
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This project is part of the EcoRoute AI system for sustainable transportation planning.

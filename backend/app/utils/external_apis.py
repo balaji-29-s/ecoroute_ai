@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 # Load .env from the app directory specifically
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 logger = logging.getLogger(__name__)
-
 ORS_API_KEY = os.getenv("ORS_API_KEY")
 OWM_API_KEY = os.getenv("OWM_API_KEY")
 
