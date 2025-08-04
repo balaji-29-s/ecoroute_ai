@@ -1,9 +1,5 @@
 # 🌱 EcoRoute AI - Smart Navigation System
 
-<p align="center">
-  <img src="frontend/public/ecoroute_ui.png" alt="EcoRoute AI UI" width="100%" />
-</p>
-
 A comprehensive smart navigation system that calculates eco-friendly routes while considering emissions, weather conditions, and traffic patterns. Built with React frontend and FastAPI backend.
 
 ## 🚀 Features
